@@ -1,39 +1,59 @@
 import { useState, useEffect } from 'react'
-import { BookHeart, Send, X } from 'lucide-react'
+import { BookHeart, Send, X, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { supabase } from './supabase'
 
 export default function JournalWidget() {
-  const [entries, setEntries] = useState(() => {
-    const saved = localStorage.getItem('regina-journal')
-    return saved ? JSON.parse(saved) : []
-  })
+  const [entries, setEntries] = useState([])
   const [text, setText] = useState('')
-  const [mood, setMood] = useState('😊') // Mood por defecto
+  const [mood, setMood] = useState('😊')
+  const [loading, setLoading] = useState(true)
 
-  // Guardar en LocalStorage cada vez que cambie
+  // 1. CARGAR DIARIO
   useEffect(() => {
-    localStorage.setItem('regina-journal', JSON.stringify(entries))
-  }, [entries])
+    fetchEntries()
+  }, [])
 
-  const addEntry = (e) => {
+  const fetchEntries = async () => {
+    const { data, error } = await supabase
+      .from('journal')
+      .select('*')
+      .order('inserted_at', { ascending: false })
+
+    if (!error) setEntries(data || [])
+    setLoading(false)
+  }
+
+  // 2. AGREGAR ENTRADA
+  const addEntry = async (e) => {
     e.preventDefault()
     if (!text.trim()) return
 
-    const newEntry = {
-      id: Date.now(),
-      text,
-      mood,
-      date: new Date().toLocaleDateString('es-MX', { 
-        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' 
-      })
-    }
+    const user = (await supabase.auth.getUser()).data.user
+    const dateDisplay = new Date().toLocaleDateString('es-MX', { 
+      day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' 
+    })
 
-    setEntries([newEntry, ...entries])
-    setText('')
+    const { data, error } = await supabase
+      .from('journal')
+      .insert([{ 
+        text, 
+        mood, 
+        date_display: dateDisplay, 
+        user_id: user.id 
+      }])
+      .select()
+
+    if (!error) {
+      setEntries([data[0], ...entries])
+      setText('')
+    }
   }
 
-  const deleteEntry = (id) => {
+  // 3. BORRAR ENTRADA
+  const deleteEntry = async (id) => {
     setEntries(entries.filter(entry => entry.id !== id))
+    await supabase.from('journal').delete().eq('id', id)
   }
 
   return (
@@ -45,7 +65,9 @@ export default function JournalWidget() {
           <span className="bg-yellow-100 p-2 rounded-full text-yellow-600">
             <BookHeart size={18} />
           </span>
-          <h3 className="font-bold text-slate-700">Bitácora</h3>
+          <h3 className="font-bold text-slate-700 flex gap-2 items-center">
+            Bitácora {loading && <Loader2 size={14} className="animate-spin" />}
+          </h3>
         </div>
         <div className="flex gap-1 bg-slate-50 rounded-full p-1">
           {['😊', '😐', '😔'].map((m) => (
@@ -78,7 +100,7 @@ export default function JournalWidget() {
         </button>
       </form>
 
-      {/* Lista de Entradas (Timeline) */}
+      {/* Lista de Entradas */}
       <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar z-10">
         <AnimatePresence>
           {entries.map(entry => (
@@ -92,14 +114,13 @@ export default function JournalWidget() {
               <div className="flex justify-between items-start mb-1">
                 <span className="text-xl">{entry.mood}</span>
                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                  {entry.date}
+                  {entry.date_display}
                 </span>
               </div>
               <p className="text-sm text-slate-600 leading-snug">
                 {entry.text}
               </p>
               
-              {/* Botón borrar (aparece al pasar mouse) */}
               <button 
                 onClick={() => deleteEntry(entry.id)}
                 className="absolute top-2 right-2 opacity-0 group-hover/card:opacity-100 text-slate-300 hover:text-red-400 transition-opacity"
@@ -108,15 +129,15 @@ export default function JournalWidget() {
               </button>
             </motion.div>
           ))}
-           {entries.length === 0 && (
+           {!loading && entries.length === 0 && (
             <p className="text-center text-slate-300 text-xs mt-6 italic">
-              Escribe tu primer recuerdo!!!
+              Escribe tu primer recuerdo... 🖊️
             </p>
           )}
         </AnimatePresence>
       </div>
       
-      {/* Decoración de fondo */}
+      {/* Decoración */}
       <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-yellow-50 rounded-full blur-3xl opacity-50 z-0 pointer-events-none"></div>
     </div>
   )

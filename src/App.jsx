@@ -1,16 +1,20 @@
 import { useState, useEffect, useRef } from 'react'
-import { Heart, Moon, Sun, Image as ImageIcon, X } from 'lucide-react'
+import { Heart, Moon, Sun, Image as ImageIcon, X, LogOut } from 'lucide-react'
 import confetti from 'canvas-confetti'
 import { motion, AnimatePresence } from 'framer-motion'
-import GoalsWidget from './GoalsWidget' // <--- IMPORTA ESTO
-import BibleWidget from './BibleWidget' // <--- IMPORTA ESTO
-// Importamos los widgets
+import { supabase } from './supabase' // Conexión a Base de Datos
+import Auth from './Auth' // Pantalla de Login
+
+// Importamos TODOS los widgets
 import MotivationWidget from './MotivationWidget'
 import FocusWidget from './FocusWidget'
 import AudioWidget from './AudioWidget'
 import JournalWidget from './JournalWidget'
+import GoalsWidget from './GoalsWidget'
+import BibleWidget from './BibleWidget'
 
 function App() {
+  const [session, setSession] = useState(null)
   const [date, setDate] = useState(new Date())
   const [isDark, setIsDark] = useState(false)
   
@@ -28,7 +32,22 @@ function App() {
     '/nosotros3.jpeg'
   ]
 
-  // OPTIMIZACIÓN 1: Pre-cargar imágenes en segundo plano
+  // 1. VERIFICAR SESIÓN (Auth Logic)
+  useEffect(() => {
+    // Revisar si ya había iniciado sesión antes
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+    })
+
+    // Escuchar cambios (si se loguea o se sale)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  // 2. OPTIMIZACIÓN: Pre-cargar imágenes
   useEffect(() => {
     photos.forEach((src) => {
       const img = new Image()
@@ -36,30 +55,32 @@ function App() {
     })
   }, [])
 
-  // Reloj
+  // 3. RELOJ
   useEffect(() => {
     const timer = setInterval(() => setDate(new Date()), 60000)
     return () => clearInterval(timer)
   }, [])
 
-  // Función: Modo Oscuro
+  // --- FUNCIONES ---
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+  }
+
   const toggleTheme = () => {
     setIsDark(!isDark)
     document.documentElement.classList.toggle('dark')
   }
 
-  // Función: Abrir Foto Sorpresa
   const handleOpenPhoto = () => {
     const randomPhoto = photos[Math.floor(Math.random() * photos.length)]
     setCurrentPhoto(randomPhoto)
     setShowPhoto(true)
   }
 
-  // OPTIMIZACIÓN 2: Confeti Limitado (Máximo 3 a la vez)
   const launchConfetti = () => {
-    if (confettiCount.current >= 3) return; // Si hay 3 activos, no hace nada
-
-    confettiCount.current += 1; // Sumamos 1 al contador
+    if (confettiCount.current >= 3) return; // Límite de 3 explosiones
+    confettiCount.current += 1;
 
     const duration = 2500;
     const end = Date.now() + duration;
@@ -87,7 +108,6 @@ function App() {
       }
     }());
 
-    // Liberamos el contador después de 2.5 segundos
     setTimeout(() => {
       confettiCount.current = Math.max(0, confettiCount.current - 1);
     }, 2500);
@@ -97,12 +117,20 @@ function App() {
     weekday: 'long', day: 'numeric', month: 'long' 
   })
 
+  // --- RENDERIZADO ---
+
+  // Si no hay sesión, mostramos el Login
+  if (!session) {
+    return <Auth />
+  }
+
+  // Si hay sesión, mostramos Regina OS
   return (
     <div className={`min-h-screen transition-colors duration-500 font-sans ${isDark ? 'bg-regina-dark' : 'bg-regina-bg'}`}>
       
       {/* HEADER */}
-      <header className="flex justify-between items-start pt-8 px-6 md:px-10 mb-8 max-w-5xl mx-auto">
-        <div>
+      <header className="flex flex-col md:flex-row justify-between items-center pt-8 px-6 md:px-10 mb-8 max-w-6xl mx-auto gap-4">
+        <div className="text-center md:text-left">
           <h1 className={`text-3xl md:text-4xl font-extrabold tracking-tight transition-colors ${isDark ? 'text-white' : 'text-slate-800'}`}>
             Hola, Regi <span className="inline-block animate-bounce text-pastel-pink"></span>
           </h1>
@@ -112,68 +140,66 @@ function App() {
         </div>
         
         <div className="flex gap-3">
-          <button 
-            onClick={handleOpenPhoto}
-            className={`p-3 rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-95 group ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-600'}`}
-          >
+          {/* Botón Foto */}
+          <button onClick={handleOpenPhoto} className={`p-3 rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-95 group ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-600'}`}>
             <ImageIcon className="w-6 h-6 group-hover:text-blue-400 transition-colors" />
           </button>
 
-          <button 
-            onClick={toggleTheme}
-            className={`p-3 rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-95 group ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-600'}`}
-          >
+          {/* Botón Tema */}
+          <button onClick={toggleTheme} className={`p-3 rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-95 group ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-600'}`}>
             {isDark ? 
               <Sun className="w-6 h-6 group-hover:text-yellow-400 transition-colors" /> : 
               <Moon className="w-6 h-6 group-hover:text-indigo-400 transition-colors" />
             }
           </button>
 
-          <button 
-            onClick={launchConfetti}
-            className={`p-3 rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-95 group ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-600'}`}
-          >
+          {/* Botón Confeti */}
+          <button onClick={launchConfetti} className={`p-3 rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-95 group ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-600'}`}>
             <Heart className="w-6 h-6 text-pastel-pink fill-pastel-pink group-hover:animate-pulse" />
+          </button>
+
+          {/* Botón Salir (Logout) */}
+          <button onClick={handleLogout} className={`p-3 rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-95 group ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-600'}`}>
+            <LogOut className="w-6 h-6 group-hover:text-red-400 transition-colors" />
           </button>
         </div>
       </header>
 
-      {/* GRID PRINCIPAL */}
+      {/* GRID PRINCIPAL DE WIDGETS */}
       <main className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-6 pb-10">
         
         {/* Columna 1: Motivación y Fe */}
         <div className="space-y-6">
-          <FocusWidget />
+          <MotivationWidget />
           <BibleWidget />
         </div>
 
         {/* Columna 2: Productividad */}
         <div className="space-y-6">
-           <MotivationWidget />
-           <JournalWidget />
+          <FocusWidget />
+          <GoalsWidget />
         </div>
 
         {/* Columna 3: Emociones y Recuerdos */}
         <div className="space-y-6">
           <AudioWidget />
-          <GoalsWidget />
+          <JournalWidget />
         </div>
 
       </main>
 
       {/* Footer */}
       <footer className="text-center text-slate-400 text-xs py-4 font-medium opacity-60">
-        Regina OS v1.0 • Hecho con 💚 por Ralts
+        Regina OS v2.0 • Hecho con 💚 por Ralts
       </footer>
 
-      {/* MODAL: FOTO FLOTANTE OPTIMIZADO */}
+      {/* MODAL: FOTO FLOTANTE */}
       <AnimatePresence>
         {showPhoto && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            // Reduje el blur a backdrop-blur-sm para mejorar rendimiento
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
             onClick={() => setShowPhoto(false)}
           >
@@ -192,14 +218,12 @@ function App() {
               </button>
               
               <div className="rounded-2xl overflow-hidden aspect-[4/5] bg-slate-100 relative">
-                {/* OPTIMIZACIÓN 3: decoding="async" para no bloquear el hilo principal */}
                 <img 
                   src={currentPhoto} 
                   alt="Nosotros" 
                   className="w-full h-full object-cover"
                   decoding="async" 
                 />
-                
                 <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-6 pt-20">
                   <p className="text-white font-bold text-lg text-center drop-shadow-md">
                     "Te amo chaparra!" 

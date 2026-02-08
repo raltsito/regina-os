@@ -1,30 +1,53 @@
 import { useState, useEffect } from 'react'
-import { Trophy, Target, Plus, X } from 'lucide-react'
+import { Trophy, Target, Plus, X, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { supabase } from './supabase'
 
 export default function GoalsWidget() {
-  const [goals, setGoals] = useState(() => {
-    const saved = localStorage.getItem('regina-goals')
-    return saved ? JSON.parse(saved) : [
-      { id: 1, text: 'Ser la mejor Project Manager 👩‍💼' },
-      { id: 2, text: 'Viajar a Europa contigo ✈️' }
-    ]
-  })
+  const [goals, setGoals] = useState([])
   const [inputValue, setInputValue] = useState('')
+  const [loading, setLoading] = useState(true)
 
+  // 1. CARGAR METAS
   useEffect(() => {
-    localStorage.setItem('regina-goals', JSON.stringify(goals))
-  }, [goals])
+    fetchGoals()
+  }, [])
 
-  const addGoal = (e) => {
-    e.preventDefault()
-    if (!inputValue.trim()) return
-    setGoals([...goals, { id: Date.now(), text: inputValue }])
-    setInputValue('')
+  const fetchGoals = async () => {
+    const { data, error } = await supabase
+      .from('goals')
+      .select('*')
+      .order('inserted_at', { ascending: false })
+    
+    if (!error) setGoals(data || [])
+    setLoading(false)
   }
 
-  const deleteGoal = (id) => {
+  // 2. AGREGAR META
+  const addGoal = async (e) => {
+    e.preventDefault()
+    if (!inputValue.trim()) return
+
+    const user = (await supabase.auth.getUser()).data.user
+    
+    // Insertar en Supabase
+    const { data, error } = await supabase
+      .from('goals')
+      .insert([{ text: inputValue, user_id: user.id }])
+      .select()
+
+    if (!error) {
+      setGoals([data[0], ...goals])
+      setInputValue('')
+    }
+  }
+
+  // 3. BORRAR META
+  const deleteGoal = async (id) => {
+    // Optimistic UI (borrar visualmente rápido)
     setGoals(goals.filter(g => g.id !== id))
+    // Borrar en DB
+    await supabase.from('goals').delete().eq('id', id)
   }
 
   return (
@@ -36,7 +59,9 @@ export default function GoalsWidget() {
           <span className="bg-orange-100 p-2 rounded-full text-orange-500">
             <Target size={18} />
           </span>
-          <h3 className="font-bold text-slate-700">Metas y Sueños</h3>
+          <h3 className="font-bold text-slate-700 flex items-center gap-2">
+            Metas {loading && <Loader2 size={14} className="animate-spin" />}
+          </h3>
         </div>
         <Trophy size={18} className="text-yellow-400" />
       </div>
