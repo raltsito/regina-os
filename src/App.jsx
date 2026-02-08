@@ -170,20 +170,21 @@ function App() {
         
         {/* Columna 1: Motivación y Fe */}
         <div className="space-y-6">
-          <MotivationWidget />
+          <FocusWidget />
           <BibleWidget />
         </div>
 
         {/* Columna 2: Productividad */}
         <div className="space-y-6">
-          <FocusWidget />
+          <MotivationWidget />
           <GoalsWidget />
         </div>
 
         {/* Columna 3: Emociones y Recuerdos */}
         <div className="space-y-6">
-          <AudioWidget />
           <JournalWidget />
+          <AudioWidget />
+          
         </div>
 
       </main>
