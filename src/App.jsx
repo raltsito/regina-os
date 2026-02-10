@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
-import { Heart, Moon, Sun, Image as ImageIcon, X, LogOut } from 'lucide-react'
+import { Heart, Moon, Sun, Image as ImageIcon, X, LogOut, Sparkles } from 'lucide-react'
 import confetti from 'canvas-confetti'
 import { motion, AnimatePresence } from 'framer-motion'
-import { supabase } from './supabase' // Conexión a Base de Datos
-import Auth from './Auth' // Pantalla de Login
+import { supabase } from './supabase' 
+import Auth from './Auth' 
 
-// Importamos TODOS los widgets
 import MotivationWidget from './MotivationWidget'
 import FocusWidget from './FocusWidget'
 import AudioWidget from './AudioWidget'
@@ -17,37 +16,26 @@ function App() {
   const [session, setSession] = useState(null)
   const [date, setDate] = useState(new Date())
   const [isDark, setIsDark] = useState(false)
-  
-  // Estado para la foto modal
   const [showPhoto, setShowPhoto] = useState(false)
   const [currentPhoto, setCurrentPhoto] = useState('')
-
-  // Control de Confeti (Anti-Lag)
   const confettiCount = useRef(0)
 
-  // TUS FOTOS
   const photos = [
     '/nosotros.jpeg',
     '/nosotros2.jpeg',
     '/nosotros3.jpeg'
   ]
 
-  // 1. VERIFICAR SESIÓN (Auth Logic)
   useEffect(() => {
-    // Revisar si ya había iniciado sesión antes
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
     })
-
-    // Escuchar cambios (si se loguea o se sale)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
     })
-
     return () => subscription.unsubscribe()
   }, [])
 
-  // 2. OPTIMIZACIÓN: Pre-cargar imágenes
   useEffect(() => {
     photos.forEach((src) => {
       const img = new Image()
@@ -55,13 +43,10 @@ function App() {
     })
   }, [])
 
-  // 3. RELOJ
   useEffect(() => {
     const timer = setInterval(() => setDate(new Date()), 60000)
     return () => clearInterval(timer)
   }, [])
-
-  // --- FUNCIONES ---
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -79,9 +64,8 @@ function App() {
   }
 
   const launchConfetti = () => {
-    if (confettiCount.current >= 3) return; // Límite de 3 explosiones
+    if (confettiCount.current >= 3) return; 
     confettiCount.current += 1;
-
     const duration = 2500;
     const end = Date.now() + duration;
 
@@ -91,7 +75,7 @@ function App() {
         angle: 60,
         spread: 55,
         origin: { x: 0 },
-        colors: ['#FFD6E0', '#FF69B4', '#C1E7F5'],
+        colors: ['#F4C5D7', '#E981A4', '#FEC9C3'], 
         shapes: ['circle', 'heart'] 
       });
       confetti({
@@ -99,7 +83,7 @@ function App() {
         angle: 120,
         spread: 55,
         origin: { x: 1 },
-        colors: ['#FFD6E0', '#FF69B4', '#C1E7F5'],
+        colors: ['#F4C5D7', '#E981A4', '#FEC9C3'],
         shapes: ['circle', 'heart']
       });
 
@@ -117,117 +101,129 @@ function App() {
     weekday: 'long', day: 'numeric', month: 'long' 
   })
 
-  // --- RENDERIZADO ---
-
-  // Si no hay sesión, mostramos el Login
   if (!session) {
     return <Auth />
   }
 
-  // Si hay sesión, mostramos Regina OS
   return (
-    <div className={`min-h-screen transition-colors duration-500 font-sans ${isDark ? 'bg-regina-dark' : 'bg-regina-bg'}`}>
+    <div className={`min-h-screen transition-colors duration-500 font-serif ${isDark ? 'bg-[#2D1B22]' : 'bg-loyal-cream'}`}>
       
-      {/* HEADER */}
-      <header className="flex flex-col md:flex-row justify-between items-center pt-8 px-6 md:px-10 mb-8 max-w-6xl mx-auto gap-4">
-        <div className="text-center md:text-left">
-          <h1 className={`text-3xl md:text-4xl font-extrabold tracking-tight transition-colors ${isDark ? 'text-white' : 'text-slate-800'}`}>
-            Hola, Regi <span className="inline-block animate-bounce text-pastel-pink"></span>
-          </h1>
-          <p className={`capitalize text-lg mt-1 font-medium transition-colors ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            {formattedDate}
-          </p>
-        </div>
-        
-        <div className="flex gap-3">
-          {/* Botón Foto */}
-          <button onClick={handleOpenPhoto} className={`p-3 rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-95 group ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-600'}`}>
-            <ImageIcon className="w-6 h-6 group-hover:text-blue-400 transition-colors" />
-          </button>
+      {/* CONTENEDOR PRINCIPAL */}
+      <div className="max-w-5xl mx-auto px-6 py-8 pb-32">
 
-          {/* Botón Tema */}
-          <button onClick={toggleTheme} className={`p-3 rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-95 group ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-600'}`}>
-            {isDark ? 
-              <Sun className="w-6 h-6 group-hover:text-yellow-400 transition-colors" /> : 
-              <Moon className="w-6 h-6 group-hover:text-indigo-400 transition-colors" />
-            }
-          </button>
-
-          {/* Botón Confeti */}
-          <button onClick={launchConfetti} className={`p-3 rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-95 group ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-600'}`}>
-            <Heart className="w-6 h-6 text-pastel-pink fill-pastel-pink group-hover:animate-pulse" />
-          </button>
-
-          {/* Botón Salir (Logout) */}
-          <button onClick={handleLogout} className={`p-3 rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-95 group ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-600'}`}>
-            <LogOut className="w-6 h-6 group-hover:text-red-400 transition-colors" />
-          </button>
-        </div>
-      </header>
-
-      {/* GRID PRINCIPAL DE WIDGETS */}
-      <main className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-6 pb-10">
-        
-        {/* Columna 1: Motivación y Fe */}
-        <div className="space-y-6">
-          <FocusWidget />
-          <BibleWidget />
-        </div>
-
-        {/* Columna 2: Productividad */}
-        <div className="space-y-6">
-          <MotivationWidget />
-          <GoalsWidget />
-        </div>
-
-        {/* Columna 3: Emociones y Recuerdos */}
-        <div className="space-y-6">
-          <JournalWidget />
-          <AudioWidget />
+        {/* HEADER */}
+        <header className="mb-8 flex justify-between items-start">
+          <div>
+            <p className="text-xs font-bold tracking-widest uppercase text-loyal-text/50 mb-1">
+              {formattedDate}
+            </p>
+            <h1 className={`text-4xl md:text-5xl font-bold italic tracking-tight transition-colors ${isDark ? 'text-white' : 'text-loyal-text'}`}>
+              Hola, Regi <span className="inline-block text-loyal-pink-dark">.</span>
+            </h1>
+          </div>
           
+          <div className="flex gap-2">
+            <button onClick={toggleTheme} className="p-2 rounded-full bg-white/50 hover:bg-white text-loyal-text transition-all">
+               {isDark ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+            <button onClick={handleLogout} className="p-2 rounded-full bg-white/50 hover:bg-white text-loyal-text transition-all">
+               <LogOut size={20} />
+            </button>
+          </div>
+        </header>
+
+        {/* --- GRID MAESTRO --- */}
+        {/* Usamos 'grid-cols-1' para móvil (pila vertical) y 'md:grid-cols-2' para PC (2 columnas simétricas) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+          
+          {/* BLOQUE 1: BIBLIA y MOTIVACIÓN */}
+          {/* Orden: Mobile (1º), Desktop (2º - Lado Derecho) */}
+          <div className="order-1 md:order-2 grid grid-cols-2 gap-4 h-full">
+            <div className="col-span-1 h-full min-h-[10rem]">
+               <BibleWidget compact={true} />
+            </div>
+            <div className="col-span-1 h-full min-h-[10rem]">
+               <MotivationWidget compact={true} />
+            </div>
+          </div>
+
+          {/* BLOQUE 2: FOCUS (Cosas por hacer) */}
+          {/* Orden: Mobile (2º), Desktop (1º - Lado Izquierdo) */}
+          <div className="order-2 md:order-1 w-full min-h-[16rem]">
+            <FocusWidget />
+          </div>
+
+          {/* BLOQUE 3: BITÁCORA */}
+          {/* Orden: Mobile (3º), Desktop (3º - Lado Izquierdo Abajo) */}
+          <div className="order-3 md:order-3 w-full min-h-[16rem]">
+            <JournalWidget />
+          </div>
+
+          {/* BLOQUE 4: METAS */}
+          {/* Orden: Mobile (4º), Desktop (4º - Lado Derecho Abajo) */}
+          <div className="order-4 md:order-4 w-full min-h-[16rem]">
+            <GoalsWidget />
+          </div>
+
+          {/* BLOQUE 5: AUDIO MAMÁ */}
+          {/* Orden: Mobile (5º), Desktop (5º - Abajo Completo) */}
+          <div className="order-5 md:order-5 md:col-span-2 w-full">
+            <AudioWidget />
+          </div>
+
         </div>
+      </div>
 
-      </main>
+      {/* BOTONES FLOTANTES */}
+      <div className="fixed bottom-8 right-8 flex flex-col gap-4 z-40">
+        <button 
+            onClick={handleOpenPhoto}
+            className="p-4 rounded-full bg-loyal-pink-dark text-white shadow-xl shadow-loyal-pink-dark/30 hover:scale-110 active:scale-95 transition-all transform hover:-rotate-12"
+        >
+            <ImageIcon size={28} />
+        </button>
+        <button 
+            onClick={launchConfetti}
+            className="p-4 rounded-full bg-white text-loyal-pink-dark shadow-xl shadow-loyal-pink-dark/10 hover:scale-110 active:scale-95 transition-all hover:animate-pulse"
+        >
+            <Heart size={28} fill="currentColor" />
+        </button>
+      </div>
 
-      {/* Footer */}
-      <footer className="text-center text-slate-400 text-xs py-4 font-medium opacity-60">
-        Regina OS v2.0 • Hecho con 💚 por Ralts
-      </footer>
-
-      {/* MODAL: FOTO FLOTANTE */}
+      {/* MODAL FOTO */}
       <AnimatePresence>
         {showPhoto && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-6"
             onClick={() => setShowPhoto(false)}
           >
             <motion.div 
-              initial={{ scale: 0.8, rotate: -5 }}
-              animate={{ scale: 1, rotate: 0 }}
-              exit={{ scale: 0.8, rotate: 5 }}
-              className="bg-white p-3 md:p-4 rounded-3xl shadow-2xl max-w-sm md:max-w-md w-full relative"
+              initial={{ scale: 0.8, y: 50 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.8, y: 50 }}
+              className="bg-white p-3 rounded-[2rem] shadow-2xl max-w-sm w-full relative"
               onClick={(e) => e.stopPropagation()}
             >
               <button 
                 onClick={() => setShowPhoto(false)}
-                className="absolute -top-3 -right-3 bg-red-400 text-white p-2 rounded-full shadow-lg hover:bg-red-500 transition-colors z-10"
+                className="absolute -top-4 -right-4 bg-loyal-text text-white p-2 rounded-full shadow-lg z-10"
               >
                 <X size={20} />
               </button>
               
-              <div className="rounded-2xl overflow-hidden aspect-[4/5] bg-slate-100 relative">
+              <div className="rounded-[1.5rem] overflow-hidden aspect-[3/4] bg-loyal-cream relative">
                 <img 
                   src={currentPhoto} 
                   alt="Nosotros" 
                   className="w-full h-full object-cover"
                   decoding="async" 
                 />
-                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-6 pt-20">
-                  <p className="text-white font-bold text-lg text-center drop-shadow-md">
-                    "Te amo chaparra!" 
+                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent p-6 pt-20">
+                  <p className="text-white font-serif italic text-xl text-center">
+                    "Te amo chaparra!"
                   </p>
                 </div>
               </div>

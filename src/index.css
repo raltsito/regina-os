@@ -2,19 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
-/* FORZAMOS EL COLOR CLARO AQUÍ */
 :root {
-  background-color: #FDFBF7; /* Color crema suave */
-  color: #1e293b; /* Texto gris oscuro elegante */
+  background-color: #FAF2DD; /* loyal-cream */
+  color: #5D3A44; /* loyal-text */
 }
 
 body {
-  @apply bg-regina-bg text-slate-800 antialiased;
-  background-color: #FDFBF7; /* Doble seguridad */
+  /* Aplicamos la fuente y suavizado de texto */
+  @apply font-serif antialiased bg-loyal-cream text-loyal-text;
 }
 
-/* Solo si activamos modo oscuro manual */
+/* Scrollbar personalizada con los nuevos colores */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #FAF2DD; 
+}
+::-webkit-scrollbar-thumb {
+  background: #E981A4; 
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #F9ADB7; 
+}
+
+/* Ajuste para modo oscuro (usamos un tono vino muy oscuro para mantener la estética) */
 .dark body {
-  @apply bg-regina-dark text-slate-100;
-  background-color: #121212;
+  background-color: #2D1B22; 
+  color: #FAF2DD;
 }

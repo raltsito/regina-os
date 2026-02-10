@@ -1,86 +1,51 @@
-import { useState } from 'react'
-import { Quote, RefreshCw, Heart } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Sparkles } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-const phrases = [
-  // --- ROCK LEE & ANIME ---
-  { text: "Mi lema es ser más fuerte que ayer. Si es necesario, estaré más fuerte que hace medio día, incluso más fuerte que hace un minuto.", author: "Rock Lee" },
-  { text: "Un héroe no es el que nunca cae. Es el que se levanta, una y otra vez, sin perder de vista sus sueños.", author: "Rock Lee" },
-  { text: "Nunca retrocederé a mi palabra. ¡Ese es mi camino ninja!", author: "Naruto Uzumaki" },
-
-  // --- ATLETAS ---
-  { text: "Ningún humano es limitado.", author: "Eliud Kipchoge" },
-  { text: "El dolor es temporal. La satisfacción es para siempre.", author: "Atletismo" },
-
-  // --- MAMÁ (Transcritas del audio) ---
-  { text: "Para mí eres la niña más valiente, más fuerte, más lista, más inteligente, más atleta.", author: "Mamá" },
-  { text: "Nunca cambies, mi amor, ese corazón tan grande.", author: "Mamá" },
-  { text: "Quiero verte ganar, mi amor, quiero verte lograr todo.", author: "Mamá" },
-  { text: "Aún cuando se ponga todo difícil, nena, ya sabes con quién recurrir.", author: "Mamá" },
-  { text: "Siempre voy a estar bien agradecida con Dios por darme la mejor hija de todo el mundo.", author: "Mamá" },
-
-  // --- CARLOS (TÚ) ---
-  { text: "Vivo si me exiges.", author: "Carlos" },
-  { text: "No tengo nada y te doy todo si tan solo me lo pides.", author: "Carlos" },
-  { text: "Cuando triunfes yo no estaré sorprendido porque sé cuánto te has esforzado.", author: "Carlos" },
-  { text: "¡Te amo preciosa hermosa!", author: "Carlos" }
+const quotes = [
+  "Ese es mi Camino Ninja.", 
+  "El trabajo duro derrota al talento.",
+  "No he vuelto, soy mejor.", 
+  "La duda mata más sueños que el fracaso.",
+  "Todo es posible para quien cree.",
+  "Sin disculpas."
 ]
 
 export default function MotivationWidget() {
   const [index, setIndex] = useState(0)
 
-  const nextPhrase = () => {
-    let newIndex;
-    do {
-      newIndex = Math.floor(Math.random() * phrases.length)
-    } while (newIndex === index)
-    setIndex(newIndex)
-  }
-
-  // Detectamos quién es el autor para cambiar el color del ícono
-  const isLove = phrases[index].author === "Mamá" || phrases[index].author === "Carlos";
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setIndex((prev) => (prev + 1) % quotes.length)
+    }, 8000) // Un poco más rápido
+    return () => clearInterval(timer)
+  }, [])
 
   return (
-    <div className="relative h-64 bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between overflow-hidden group hover:shadow-md transition-shadow duration-300">
+    <div className="h-full w-full bg-loyal-pink-dark rounded-[2rem] p-5 shadow-sm shadow-loyal-pink-dark/20 flex flex-col justify-between relative overflow-hidden group">
       
-      {/* Icono de fondo decorativo */}
-      <div className="absolute top-0 right-0 p-4 opacity-10">
-        {isLove ? <Heart size={80} className="text-pastel-pink rotate-12" /> : <Quote size={80} className="text-pastel-blue rotate-12" />}
+      {/* Icono Blanco */}
+      <div className="flex items-center gap-2">
+        <span className="bg-white/20 p-2 rounded-full text-white">
+          <Sparkles size={16} />
+        </span>
       </div>
-
-      {/* Cabecera */}
-      <div className="flex justify-between items-center z-10">
-        <div className="flex items-center gap-2">
-          <span className={`p-2 rounded-full ${isLove ? 'bg-pastel-pink/30 text-pink-600' : 'bg-pastel-blue/30 text-blue-600'}`}>
-            {isLove ? <Heart size={18} /> : <Quote size={18} />}
-          </span>
-          <h3 className="font-bold text-slate-700">Tu Nindo</h3>
-        </div>
-        
-        <button onClick={nextPhrase} className="p-2 hover:bg-slate-50 rounded-full transition-colors active:rotate-180 duration-500">
-          <RefreshCw size={18} className="text-slate-400" />
-        </button>
-      </div>
-
-      {/* Frase */}
-      <div className="flex-1 flex flex-col justify-center items-center text-center z-10 mt-2 cursor-pointer" onClick={nextPhrase}>
+      
+      <div className="flex-1 flex flex-col justify-center items-start mt-2">
         <AnimatePresence mode='wait'>
-          <motion.div
+          <motion.p
             key={index}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.05 }}
+            className="text-lg md:text-xl font-serif italic text-white leading-tight font-medium"
           >
-            <p className="text-lg md:text-xl font-medium text-slate-800 leading-relaxed italic">
-              "{phrases[index].text}"
-            </p>
-            <p className={`mt-4 text-xs font-bold uppercase tracking-wider ${isLove ? 'text-pastel-pink' : 'text-pastel-blue'}`}>
-              - {phrases[index].author}
-            </p>
-          </motion.div>
+            {quotes[index]}
+          </motion.p>
         </AnimatePresence>
       </div>
+
+      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl pointer-events-none -mr-10 -mt-10"></div>
     </div>
   )
 }

@@ -1,32 +1,27 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
-      colors: {
-        // Paleta personalizada
-        'regina-bg': '#FDFBF7',
-        'regina-dark': '#121212',
-        'pastel-pink': '#FFD6E0',
-        'pastel-blue': '#C1E7F5',
-        'pastel-green': '#D0F0C0',
-        'pastel-purple': '#E2CBF7',
-      },
       fontFamily: {
-        sans: ['"Nunito"', 'sans-serif'],
+        // Configuramos Lora como la fuente principal
+        serif: ['Lora', 'serif'],
+        sans: ['Lora', 'serif'], // Forzamos Lora en todo
       },
-      animation: {
-        'float': 'float 6s ease-in-out infinite',
-      },
-      keyframes: {
-        float: {
-          '0%, 100%': { transform: 'translateY(0)' },
-          '50%': { transform: 'translateY(-10px)' },
-        }
+      colors: {
+        // PALETA LOYAL PINK
+        'loyal-cream': '#FAF2DD',   // Fondo principal
+        'loyal-pink-light': '#F4C5D7', 
+        'loyal-pink-mid': '#F9ADB7',
+        'loyal-peach': '#FEC9C3',   // Color "Pop"
+        'loyal-pink-dark': '#E981A4', // Para botones o acentos fuertes
+        
+        // Color de texto oscuro para contraste (Vino oscuro)
+        'loyal-text': '#5D3A44', 
       }
     },
   },
